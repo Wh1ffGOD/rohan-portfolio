@@ -1439,23 +1439,24 @@
           </a>
         </div>
       </div>
-      <div class="contact-form">
+      <form class="contact-form" id="contactForm">
         <div class="form-group">
           <label class="form-label">Name</label>
-          <input type="text" class="form-input" placeholder="Your name" id="formName">
+          <input type="text" class="form-input" placeholder="Your name" id="formName" name="name" required>
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input type="email" class="form-input" placeholder="your@email.com" id="formEmail">
+          <input type="email" class="form-input" placeholder="your@email.com" id="formEmail" name="email" required>
         </div>
         <div class="form-group">
           <label class="form-label">Message</label>
-          <textarea class="form-textarea" placeholder="Hey Rohan, let's work together..." id="formMessage"></textarea>
+          <textarea class="form-textarea" placeholder="Hey Rohan, let's work together..." id="formMessage" name="message" required></textarea>
         </div>
-        <button class="btn btn-primary" id="sendBtn" onclick="handleSubmit()" style="width: fit-content;">
+        <div id="formStatus" style="display:none; padding: 10px 14px; border-radius: var(--r2); font-size: 14px; font-family: var(--mono);"></div>
+        <button class="btn btn-primary" id="sendBtn" type="button" onclick="handleSubmit()" style="width: fit-content;">
           Send Message →
         </button>
-      </div>
+      </form>
     </div>
   </div>
 </section>
@@ -1562,18 +1563,64 @@
   }
 
   // ── CONTACT FORM ──
-  function handleSubmit() {
+  async function handleSubmit() {
     const btn = document.getElementById('sendBtn');
-    const name = document.getElementById('formName').value;
-    if (!name) { document.getElementById('formName').focus(); return; }
-    btn.textContent = 'Sent! ✓';
-    btn.style.background = 'linear-gradient(135deg, #28c840, #00b8d4)';
+    const status = document.getElementById('formStatus');
+    const name = document.getElementById('formName').value.trim();
+    const email = document.getElementById('formEmail').value.trim();
+    const message = document.getElementById('formMessage').value.trim();
+
+    if (!name || !email || !message) {
+      status.style.display = 'block';
+      status.style.background = 'rgba(255,80,80,0.1)';
+      status.style.border = '1px solid rgba(255,80,80,0.3)';
+      status.style.color = '#ff6b6b';
+      status.textContent = 'Please fill in all fields.';
+      return;
+    }
+
+    // ⚠️ Replace YOUR_FORMSPREE_ID below with your ID from formspree.io
+    // e.g. https://formspree.io/f/xpzgkjqr  →  use  xpzgkjqr
+    const FORMSPREE_ID = 'YOUR_FORMSPREE_ID';
+
+    if (FORMSPREE_ID === 'YOUR_FORMSPREE_ID') {
+      // Fallback: open email client if Formspree not configured
+      window.location.href = `mailto:rohansinghofficial13@gmail.com?subject=Portfolio Contact from ${encodeURIComponent(name)}&body=${encodeURIComponent(message + '\n\nFrom: ' + email)}`;
+      return;
+    }
+
+    btn.textContent = 'Sending...';
     btn.disabled = true;
-    setTimeout(() => {
+    status.style.display = 'none';
+
+    try {
+      const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ name, email, message })
+      });
+
+      if (res.ok) {
+        status.style.display = 'block';
+        status.style.background = 'rgba(0,229,160,0.1)';
+        status.style.border = '1px solid rgba(0,229,160,0.3)';
+        status.style.color = 'var(--accent)';
+        status.textContent = '✓ Message sent! I\'ll get back to you soon.';
+        document.getElementById('contactForm').reset();
+        btn.textContent = 'Send Message →';
+        btn.disabled = false;
+      } else {
+        throw new Error('Failed');
+      }
+    } catch {
+      status.style.display = 'block';
+      status.style.background = 'rgba(255,80,80,0.1)';
+      status.style.border = '1px solid rgba(255,80,80,0.3)';
+      status.style.color = '#ff6b6b';
+      status.textContent = 'Something went wrong. Please email me directly.';
       btn.textContent = 'Send Message →';
-      btn.style.background = '';
       btn.disabled = false;
-    }, 3000);
+    }
   }
 </script>
 
